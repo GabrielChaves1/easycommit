@@ -39,15 +39,14 @@ var generateCmd = &cobra.Command{
 			return
 		}
 
-		var aiClient ai.Agent
+		if cfg.AgentType == "" || cfg.APIKey == "" {
+			errColor.Println("❌ Agent type not specified in config.")
+			return
+		}
 
-		// Initialize the AI client based on the agent type
-		switch cfg.AgentType {
-		case "openai":
-			aiClient, err = ai.NewAgent(
-				cfg.AgentType,
-				ai.WithAPIKey(cfg.APIKey),
-			)
+		aiClient, err := ai.NewAgent(cfg.AgentType, ai.WithAPIKey(cfg.APIKey))
+		if err != nil {
+			errColor.Println("❌ Error initializing AI client: ", err)
 		}
 
 		if err != nil {
@@ -56,7 +55,7 @@ var generateCmd = &cobra.Command{
 		}
 
 		loading := color.New(color.FgYellow).Add(color.Bold)
-		loading.Println("🎲 Generating commit message...")
+		loading.Printf("🎲 Generating commit message (%s)\n", cfg.AgentType)
 
 		// Generate commit message using AI
 		message, err := aiClient.GenerateCommitMessage(cmd.Context(), diff, cfg.Language)
@@ -66,7 +65,7 @@ var generateCmd = &cobra.Command{
 			return
 		}
 
-		successColor.Println("✅ Generated commit message:")
+		successColor.Printf("✅ Generated commit message (%s)\n", cfg.AgentType)
 		messageColor.Printf("%s\n", message)
 		warnColor.Println("💻 To commit, run: git commit -m \"" + message + "\"")
 

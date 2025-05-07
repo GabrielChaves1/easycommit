@@ -13,8 +13,10 @@ func GeneratePrompt(language string) string {
 		"- Keep the message under 75 characters " +
 		"- Be descriptive but concise " +
 		"- Focus on WHY and WHAT, not HOW " +
-		"- Assume the diff is a single commit" +
-		"- Use the language " + language + " for the commit message." +
+		"- Assume the diff is a single commit " +
+		"- The commit message should have just one line " +
+		"- **Do NOT use code blocks, quotes, or any extra formatting. Output ONLY the commit message itself.** " +
+		"- Use the language " + language + " for the commit message. " +
 		BuildConventionalCommitPrompt()
 }
 

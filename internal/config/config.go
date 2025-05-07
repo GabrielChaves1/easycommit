@@ -50,3 +50,10 @@ func configPath() string {
 	home, _ := os.UserHomeDir()
 	return home + "/.easycommit.yaml"
 }
+
+func loadDefaultConfig() *Config {
+	return &Config{
+		AgentType: "openai",
+		Language:  "en-US",
+	}
+}

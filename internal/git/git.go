@@ -4,32 +4,32 @@ import (
 	"bytes"
 	"errors"
 	"os/exec"
+	"strings"
 )
 
 var (
-	ErrNoStagedChanges error = errors.New("no staged changes")
-	ErrGitNotFound     error = errors.New("git not found or not a git repository")
+	ErrNoStagedChanges = errors.New("no staged changes")
+	ErrGitNotFound     = errors.New("git not found or not a git repository")
 )
 
 func GetStagedDiff() (string, error) {
-	// Execute the git diff command to get the staged changes
 	cmd := exec.Command("git", "diff", "--cached", "--diff-algorithm=minimal")
 	var out bytes.Buffer
 	cmd.Stdout = &out
+	cmd.Stderr = &out
 	err := cmd.Run()
 
+	// If the command fails, check if it's due to not being in a git repository
 	if err != nil {
-		if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() == 1 {
-			return "", ErrNoStagedChanges
-		}
-		if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() == 128 {
+		if strings.Contains(out.String(), "Not a git repository") {
 			return "", ErrGitNotFound
 		}
 		return "", err
 	}
 
+	// Check if there are any staged changes
 	diff := out.String()
-	if diff == "" {
+	if strings.TrimSpace(diff) == "" {
 		return "", ErrNoStagedChanges
 	}
 
@@ -37,13 +37,21 @@ func GetStagedDiff() (string, error) {
 }
 
 func CommitStagedChanges(message string) (string, error) {
-	cmd := exec.Command("git", "commit", "-m", message)
+	// Sanitize the message to avoid issues with newlines
+	safeMsg := strings.ReplaceAll(message, "\n", " ")
+	cmd := exec.Command("git", "commit", "-m", safeMsg)
 	var out bytes.Buffer
+	var stderr bytes.Buffer
 	cmd.Stdout = &out
+	cmd.Stderr = &stderr
 	err := cmd.Run()
 
 	if err != nil {
-		return "", err
+		// If the error is due to no staged changes
+		if strings.Contains(stderr.String(), "nothing to commit") {
+			return "", ErrNoStagedChanges
+		}
+		return "", errors.New(stderr.String())
 	}
 
 	return out.String(), nil

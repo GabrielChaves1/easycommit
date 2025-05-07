@@ -3,6 +3,7 @@ package cmd
 import (
 	"github.com/GabrielChaves1/easycommit/internal/ai"
 	"github.com/GabrielChaves1/easycommit/internal/config"
+	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 )
 
@@ -13,9 +14,12 @@ var setAgentCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		agentType := ai.AgentType(args[0])
 
+		errColor := color.New(color.FgRed, color.Bold)
+		successColor := color.New(color.FgGreen, color.Bold)
+
 		// Validate the agent type
 		if !agentType.IsValid() {
-			cmd.Println("Invalid agent type. Available types are:")
+			errColor.Println("Invalid agent type. Available types are:")
 			for _, at := range ai.ListAgentTypes() {
 				cmd.Printf(" - %s\n", at)
 			}
@@ -24,29 +28,29 @@ var setAgentCmd = &cobra.Command{
 
 		// Initialize the agent based on the type
 		switch agentType {
-		case ai.AgentTypeOpenAI:
+		default:
 			apiKey, _ := cmd.Flags().GetString("api-key")
 			if apiKey == "" {
-				cmd.Println("API key is required for OpenAI agent")
-				cmd.Println("Use --api-key to set the API key.")
+				errColor.Println("API key is required")
+				errColor.Println("Use --api-key to set the API key.")
 				return
 			}
 
-			// Initialize the OpenAI agent
+			// Initialize the Agent
 			_, err := ai.NewAgent(
-				"openai",
+				agentType.String(),
 				ai.WithAPIKey(apiKey),
 			)
 
 			if err != nil {
-				cmd.Println("Error initializing OpenAI client: ", err)
+				errColor.Println("Error initializing AI client: ", err)
 				return
 			}
 
 			// Get the current configuration or return a empty one
 			cfg, err := config.Load()
 			if err != nil {
-				cmd.Println("Error loading config: ", err)
+				errColor.Println("Error loading config: ", err)
 				return
 			}
 
@@ -55,11 +59,11 @@ var setAgentCmd = &cobra.Command{
 
 			// Save the configuration of the agent
 			if err := cfg.Save(); err != nil {
-				cmd.Println("Error saving config: ", err)
+				errColor.Println("Error saving config: ", err)
 				return
 			}
 
-			cmd.Println("Agent set successfully.")
+			successColor.Println("Agent set successfully.")
 		}
 	},
 }
@@ -71,18 +75,24 @@ var setLanguageCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		lang := args[0]
 
+		errColor := color.New(color.FgRed, color.Bold)
+		successColor := color.New(color.FgGreen, color.Bold)
+
+		// Load the current configuration
 		cfg, err := config.Load()
 		if err != nil {
-			cmd.Println("Error loading config:", err)
+			errColor.Println("Error loading config:", err)
 			return
 		}
 
+		// Save the new language setting to the yaml file
 		cfg.Language = lang
 		if err := cfg.Save(); err != nil {
-			cmd.Println("Error saving config:", err)
+			errColor.Println("Error saving config:", err)
 			return
 		}
-		cmd.Printf("Language set to %s\n", lang)
+
+		successColor.Printf("Language set to %s\n", lang)
 	},
 }
 

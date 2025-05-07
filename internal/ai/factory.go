@@ -10,6 +10,7 @@ type AgentType string
 
 const (
 	AgentTypeOpenAI AgentType = "openai"
+	AgentTypeGemini AgentType = "gemini"
 )
 
 type AgentFactory func(*config.Config) Agent
@@ -17,6 +18,9 @@ type AgentFactory func(*config.Config) Agent
 var agentFactory = map[AgentType]AgentFactory{
 	AgentTypeOpenAI: func(cfg *config.Config) Agent {
 		return NewOpenAIClient(cfg.APIKey)
+	},
+	AgentTypeGemini: func(cfg *config.Config) Agent {
+		return NewGeminiClient(cfg.APIKey)
 	},
 }
 

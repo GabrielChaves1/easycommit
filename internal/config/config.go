@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"os"
+	"path/filepath"
 
 	"gopkg.in/yaml.v3"
 )
@@ -12,6 +13,10 @@ type Config struct {
 	APIKey    string `yaml:"api_key"`
 	Language  string `yaml:"language"`
 }
+
+// ConfigPath allows overriding the default configuration file location.
+// Tests can set this value to write config files in temporary directories.
+var ConfigPath string
 
 func Load() (*Config, error) {
 	path := configPath()
@@ -47,8 +52,11 @@ func (c *Config) Save() error {
 }
 
 func configPath() string {
+	if ConfigPath != "" {
+		return ConfigPath
+	}
 	home, _ := os.UserHomeDir()
-	return home + "/.easycommit.yaml"
+	return filepath.Join(home, ".easycommit.yaml")
 }
 
 func loadDefaultConfig() *Config {
